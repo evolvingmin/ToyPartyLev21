@@ -1,0 +1,129 @@
+Tutorial
+========
+
+This is an early build of [Minibuffer](http://seawisphunter.com), a developer console for Unity.  It's inspired by Emacs but stripped down to little more than, well, a minibuffer, which is a specialized prompt for user input.  This tutorial will show you the basics of how to use and extend Minibuffer.  To get back to this tutorial, hit 'Ctrl-h' then 't' at any time.
+
+Run a Command
+-------------
+
+To run a command, hit 'alt-x' referred to as 'M-x' in Emacs and also in Minibuffer.  A prompt will appear.  Type 'hello' then hit 'return'.  It will ask for a name.  You can provide your name or type 'World' then hit 'return'.  You should now see a message in the echo area that says, "Hello, $name!"  Congratulations!  That's your first command of many!  To dismiss the message, hit 'Ctrl-g' or 'C-g'.  To dismiss minibuffer, hit 'Ctrl-g' or 'C-g' again.  (Vi users may be happy to know that they can hit ':' to bring up a prompt and 'escape' instead of 'C-g'.  You can of course add your own key bindings as well.)
+
+Type in 'describe-command' and hit 'return'.  This will ask for a command to describe.  Type 'hello' and hit return.  It will show the following.
+
+    hello is not bound to any keys.
+    Description: "Say hello and show off other completers"
+    It is defined in class MyCommands.
+      Void Hello(String str)
+
+### Tab Complete ALL THE THINGS!
+
+If it's possible to tab complete a thing, Minibuffer tab completes it.  Let's try it.  Hit 'M-x' then hit 'tab'.  This will show the list of available commands.  You can scroll up or down the list with your mouse or you can hit 'Ctrl-v' (or 'C-v') to scroll down and 'Alt-v' (or 'M-v') to scroll up.
+
+Hit 'tab' again to scroll down the list. Hit 'Shift-tab' or 'S-tab' to scroll up the list.
+
+Type 'd' then hit 'tab'.  This will show all the commands that begin with d.  Type 'es' then 'tab' to auto complete 'describe-' then hit 'b tab' to complete the describe-bindings command then hit return.  This runs the describe-bindings command, which shows all of the key bindings that are currently set.  This will report that you can also run the describe-bindings command by hitting 'Ctrl-h b' or 'C-h b'.
+
+Key Bindings
+------------
+
+There are other commands bound to other keys.  You can inspect them by running the command 'M-x describe-bindings' or hitting 'Ctrl-h b' or 'C-h b'.  You may wonder why this tutorial repeats the key bindings in two similar but different ways, e.g., 1) 'Ctrl-h b' and 2) 'C-h b'.  That's because Minibuffer uses a notation that will be familiar to Emacs users but may not be familiar to everyone.  It's a simple and concise way to refer to key chord sequences.
+
+### Key Notation
+
+Minibuffer uses Emacs' notation for key chords.  It's biggest difference from the standard is calling the 'Alt' key 'Meta' and using one character to identify modifiers.  In addition, the 'Command' key on macOS and 'Windows' key on Windows is called the 'Super' key.
+
+
+| Standard    | Emacs | Pronounced   | Meaning                                   |
+| ---         | ---   | ---          | ---                                       |
+| Alt-x       | M-x   | Meta X       | Hold down 'alt' then hit 'x'.             |
+| Ctrl-v      | C-v   | Control V    | Hold down 'control' then hit 'v'.         |
+| Alt-Shift-c | M-S-c | Meta Shift C | Hold down 'alt' and 'shift' then hit 'c'. |
+| Command-f   | s-f   | Super F      | Hold down 'command' then hit 'f'.         |
+| Win-f       | s-f   | Super F      | Hold down 'win' then hit 'f'.             |
+| Ctrl-c c    | C-c c | Control C, C | Hold down 'control' then hit 'c'          |
+|             |       |              | then release 'control' then hit 'c'.      |
+
+Extending Minibuffer
+====================
+
+Create a Command
+----------------
+
+Let's create a hello-world command for Minibuffer.  Create a new MonoBehaviour script in Unity called 'MyCommands.cs'.  Add the following code:
+
+```cs
+  [Command("hello-world")]
+  public string HelloWorld() {
+    return "Hello, World!";
+  }
+```
+
+That's it. You can run it with 'M-x hello-world' now.  It will print "Hello, World!" to minibuffer's echo area.
+
+Since this section of the tutorial may have you stopping and starting Unity, you may want to read this file in your browser.  Hit 'M-x open-in-browser' to do that.
+
+Accept an Argument
+------------------
+
+What if we want our command to accept an argument?  We can do that quite simply.
+
+```cs
+  [Command("hello-world2")]
+  public string HelloWorld2(string name) {
+    return "Hello, " + name + "!";
+  }
+```
+
+This works, but what if we want to enable tab completion?
+
+Tab Completion
+--------------
+
+If we have an ad hoc list of completions that aren't too long, we can add them using the Prompt attribute.
+
+```cs
+  [Command("hello-world3")]
+  public string HelloWorld3([Prompt("Name: ",
+                              completions = new string[]
+                                { "John", "Sean", "Shane"})]
+                            string name) {
+    return "Hello, " + name + "!";
+  }
+```
+
+This works but it's a very limited form of tab completion.  We can specify what completer should be used.  Perhaps we'd like to say hello to one of our commands, we could do the following:
+
+```cs
+  [Command("hello-world4")]
+  public string HelloWorld4([Prompt("Command name: ",
+                              completer = "command")]
+                            string name) {
+    return "Hello, " + name + "!";
+  }
+```
+
+Often times though, one need not supply any meta data using the Prompt attribute at all. Often the type has enough information to infer a completer.  For instance, we could say hello to a GameObject, or a Texture, a Material, or many others.  To see all the completers, run 'M-x describe-completers'.  Remember you can come back to this tutorial by hitting 'C-h t'.
+
+```cs
+  [Command("hello-world5")]
+  public string HelloWorld5(GameObject gameObject) {
+    return "Hello, " + gameObject.Name + "!";
+  }
+```
+
+Appendix
+========
+
+```cs
+using UnityEngine;
+using SeawispHunter.MinibufferConsole;
+
+public class MyCommands : MonoBehaviour {
+
+  [Command("hello-world")]
+  public void HelloWorld() {
+    Minibuffer.instance.Message("Hello, World!");
+  }
+
+}
+```

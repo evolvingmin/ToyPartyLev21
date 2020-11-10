@@ -1,0 +1,16 @@
+<!-- https://github.com/jacobdufault/fullserializer -->
+<linker>
+    <assembly fullname="SeawispHunter.FullSerializer">
+        <namespace fullname="SeawispHunter.FullSerializer" preserve="all"/>
+        <namespace fullname="SeawispHunter.FullSerializer.Internal" preserve="all"/>
+        <namespace fullname="SeawispHunter.FullSerializer.Internal.DirectConverters" preserve="all"/>
+    </assembly>
+    <assembly fullname="SeawispHunter.MinibufferConsole">
+        <namespace fullname="SeawispHunter.MinibufferConsole" preserve="all"/>
+        <namespace fullname="SeawispHunter.MinibufferConsole.Extensions" preserve="all"/>
+        <namespace fullname="SeawispHunter.MinibufferConsole.Examples" preserve="all"/>
+    </assembly>
+    <!-- https://docs.unity3d.com/Manual/IL2CPP-BytecodeStripping.html -->
+    <!-- <assembly fullname="System" preserve="all"/> -->
+
+</linker>

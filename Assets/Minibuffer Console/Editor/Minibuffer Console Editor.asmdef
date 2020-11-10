@@ -1,0 +1,10 @@
+{
+    "name": "MinibufferConsoleEditor",
+    "references": [
+        "MinibufferConsole"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

@@ -1,0 +1,75 @@
+Minibuffer Console Cheatsheet
+=============================
+
+This is a curated list of Minibuffer key bindings and commands that represent
+the least commands one ought to have on hand to make the most out of Minibuffer,
+making it both usable and discoverable.
+
+Minimal Usable
+--------------
+
+key              | command                  | description
+---              | -------                  | -----------
+alt-x or :       | execute-extended-command | Reads a command and its arguments then executes it
+alt-X            | execute-user-command     | Executes a command; does not show system commands
+escape or ctrl-g | keyboard-quit            | Quit the current operation; two quits will hide minibuffer
+~                | toggle-visibility        | Toggle minibuffer visibility
+.                | repeat-last-command      | Repeat the last command
+ctrl-u           | universal-argument       | Pass a numerical or boolean argument to the next command
+ctrl-x v         | edit-variable            | Edit a variable
+tab              | minibuffer-complete      | Tab complete or show available completions
+
+Minimal Discoverable
+--------------------
+
+key              | command                  | description
+---              | -------                  | -----------
+ctrl-h B         | describe-user-bindings   | Show key bindings
+ctrl-h b         | describe-bindings        | Show key bindings
+ctrl-h c         | describe-command         | Show method, class, and keybindings for command
+ctrl-h k         | describe-key             | Reports what command is run for a key sequence
+ctrl-h v         | describe-variable        | Show type, class, and description for a variable
+ctrl-h h         | help-for-help            | Show the master help page
+
+Since Minibuffer allows for key sequences, sometimes you'll wonder what else is
+bound to `ctrl-c`? In that case, type `ctrl-c ctrl-h` and it'll show you all the
+key bindings that start with `ctrl-c`.
+
+
+Niceties
+========
+
+The following commands are merely nice to have.
+
+key              | command                   | description
+---              | -------                   | -----------
+ctrl-c ctrl-c p  | open-buffer-in-browser    | Show current buffer as HTML
+ctrl-c ctrl-c t  | open-buffer-in-text-editor| Write current buffer to a temp file then open it
+
+command             | description                                  | key bindings
+-------             | -----------                                  | ------------
+show-console        | Show Unity's Console log                     | ctrl-c d
+switch-to-scene     | Load a scene                                 | ctrl-x s or ctrl-x l
+capture-screenshot  | Save screenshot to selected directory        | ctrl-c c
+scene-reload        | Reload the current scene                     | ctrl-x r
+describe-scene      | Show game object hierarchy of scene          | ctrl-h s
+describe-game-object| Show a game object's components and children | ctrl-h o
+
+Just For Fun
+------------
+
+Record a GIF.
+
+key              | command                  | description
+---              | -------                  | -----------
+ctrl-[           | gif-record               | Start recording a GIF
+ctrl-]           | gif-stop                 | Stop recording a GIF and encode it
+
+Send a tweet.
+
+command          | description
+-------          | -----------
+tweet            | Tweet a message
+tweet-gif        | Tweet a GIF
+tweet-screenshot | Tweet a screenshot
+twitter-authorize| Authorize through twitter

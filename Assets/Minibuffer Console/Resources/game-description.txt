@@ -1,0 +1,16 @@
+YOUR GAME HERE
+==============
+
+Add your game description or README here!
+
+You can use [Markdown][1] to format your text. Type 'alt-x
+open-buffer-in-browser' to see a buffer in the browser.
+
+How
+---
+
+Ok.  How?
+
+Edit the game object `Minibuffer Console/Describe/Game`.
+
+[1]: https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet

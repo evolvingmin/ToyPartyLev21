@@ -1,0 +1,45 @@
+Help-for-help
+=============
+
+Welcome to Minibuffer, a developer console for Unity. It offers commands, variables, and key bindings. It is made to be discoverable. By knowing a few commands, you can discover everything Minibuffer has to offer.
+
+To recall this buffer, hit 'ctrl-h h' or 'alt-x help-for-help' at any time.
+
+Basics
+------
+
+Hit 'alt-x' then 'tab' to see the available commands.  To run the command 'increment-font-size', type 'alt-x inc' then hit 'tab' then hit 'return'.  This command is also bound to a key, so hitting 'ctrl-=' will run it.  This command has a sister command 'decrement-font-size' bound to 'ctrl--'.
+
+Help Commands
+-------------
+
+Here are some notable key bindings for Minibuffer that will help you discover what is available.
+
+# help keymap
+key      | command                | description
+---      | -------                | -----------
+ctrl-h b | describe-bindings      | Show key bindings
+ctrl-h B | describe-user-bindings | Show user key bindings
+ctrl-h c | describe-command       | Show method, class, and key bindings for command
+ctrl-h k | describe-key           | Reports what command is run for a key sequence
+ctrl-h v | describe-variable      | Show type, class, and description for a variable
+ctrl-h g | describe-game          | Your game's description
+ctrl-h h | help-for-help          | Show the master help page (this)
+
+Each command will tell you about the currently running system.
+
+* To see a list of all key bindings, hit 'ctrl-h b'.
+* To see a list of just the users' key bindings, hit 'ctrl-h B'.
+* To see what a key sequence will do, type 'ctrl-h k' then a key sequence. For example, 'ctrl-h k alt-x' reports that 'alt-x runs the command 'execute-extended-command'.
+
+# unity-commands keymap
+key      | command              | description
+---      | -------              | -----------
+ctrl-h o | describe-game-object | Show a game object's components and children
+ctrl-h s | describe-scene       | Show game object hierarchy of scene
+ctrl-x l | switch-to-scene      | Load a scene
+ctrl-x r | scene-reload         | Reload the scene
+ctrl-c d | show-console         | Show Unity's console log
+cmd-\    | toggle-pause         | Pause or resume the game
+
+You can also see the commands and variables offered in any MonoBehaviour in the inspector.
