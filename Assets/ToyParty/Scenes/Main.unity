@@ -1934,7 +1934,7 @@ MonoBehaviour:
   m_BlockingObjects: 0
   m_BlockingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 55
 --- !u!114 &626577085
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2057,7 +2057,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objectTileMap: {fileID: 603480422}
-  playAreaTimeMap: {fileID: 130392233}
+  playAreaMap: {fileID: 130392233}
   grid: {fileID: 1823856355}
 --- !u!1 &2017532071
 GameObject:
@@ -2069,6 +2069,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2017532073}
   - component: {fileID: 2017532072}
+  - component: {fileID: 2017532074}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -2103,3 +2104,15 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2017532074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2017532071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f76f5c655c8f8b449a6084dfef059f78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

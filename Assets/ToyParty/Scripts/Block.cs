@@ -31,14 +31,11 @@ namespace ToyParty
                 // 해당 스프라이트는 레벨 구성에서만 사용되고, 실제 인 게임 플레이에서는 사용하지 않는다.
                 
                 var goRenderer = go.GetComponent<SpriteRenderer>();
-                go.name = $"({position}) : {name}";
-
+                goRenderer.name = position.ToString();
                 goRenderer.color = color;
                 goRenderer.sprite = sprite;
 
-                GameManager.Instance.Board.AddBlockFromLevel(position, go.GetComponent<BlockBehaviour>());
-
-                
+                GameManager.Instance.Board.AddBlockFromLevel(position, name, go.GetComponent<BlockBehaviour>());
             }
 
             return base.StartUp(position, tilemap, go);

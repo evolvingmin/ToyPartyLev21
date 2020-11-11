@@ -5,11 +5,12 @@ using System.Collections.Generic;
 using ToyParty;
 using UnityEngine;
 
-public class BlockBehaviour : LeanSelectableBehaviour, IPoolingObject
+public class BlockBehaviour : LeanSelectableBehaviour
 {
     private LeanFinger current = null;
     private float touchedTime = 0.0f;
     private Vector3 worldPosition;
+
     protected override void OnSelect(LeanFinger finger)
     {
         var cellIndex = GameManager.Instance.Board.Grid.WorldToCell(this.transform.position);
@@ -30,4 +31,5 @@ public class BlockBehaviour : LeanSelectableBehaviour, IPoolingObject
         current = null;
         
     }
+
 }
