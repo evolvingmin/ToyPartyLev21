@@ -27,6 +27,19 @@ namespace ToyParty.System
 
             pools[tag].PushNewItem(instanciated);
         }
+
+        public void StoreObject(string tag, GameObject store)
+        {
+            if (pools.ContainsKey(tag) == false)
+            {
+                Debug.Log($"{tag} is not pooled ");
+                return;
+            }
+            store.SetActive(false);
+            store.transform.SetParent(this.transform);
+
+            pools[tag].Store(store);
+        }
         
     }
 }

@@ -27,15 +27,9 @@ namespace ToyParty
         {
             if(go != null)
             {
-                // 데이터에 해당하는 부분은 Block에 집중적으로 넣고, Prefab은 기능으로만 활용.
-                // 해당 스프라이트는 레벨 구성에서만 사용되고, 실제 인 게임 플레이에서는 사용하지 않는다.
-                
-                var goRenderer = go.GetComponent<SpriteRenderer>();
-                goRenderer.name = position.ToString();
-                goRenderer.color = color;
-                goRenderer.sprite = sprite;
-
-                GameManager.Instance.Board.AddBlockFromLevel(position, name, go.GetComponent<BlockBehaviour>());
+                var behaviour = go.GetComponent<BlockBehaviour>();
+                behaviour.Init(name, position, sprite, color);
+                GameManager.Instance.Board.AddBlockFromLevel(position, name, behaviour);
             }
 
             return base.StartUp(position, tilemap, go);
