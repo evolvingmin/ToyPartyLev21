@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Threading.Tasks;
 using ToyParty.System;
 using ToyParty.Utilities;
 using UnityEngine;
@@ -48,6 +49,8 @@ namespace ToyParty
         private Dictionary<Vector3Int, BlockBehaviour> blocks = new Dictionary<Vector3Int, BlockBehaviour>();
 
         public Grid Grid { get => this.grid; }
+        public int EmptyCount { get => blocks.Count(x => x.Value == null); }
+
         [SerializeField]
         private Grid grid = null;
 
@@ -61,7 +64,7 @@ namespace ToyParty
 
         public bool ContainsBlock(Vector3Int index)
         {
-            if (playAreaMap.HasTile(index) == false)
+            if (IsInPlayArea(index) == false)
             {
                 return false;
             }
@@ -112,7 +115,25 @@ namespace ToyParty
             return sameBlocks;
         }
 
-        public void RemoveBlocks(IEnumerable<BlockBehaviour> matched)
+        public async Task DropBlock(Vector3Int dropPoint, HexDirection suggestDir, BlockBehaviour behaviour)
+        {
+            behaviour.transform.SetParent(this.transform);
+            behaviour.transform.position = Grid.CellToWorld(dropPoint);
+            behaviour.Index = dropPoint;
+            behaviour.gameObject.SetActive(true);
+            List<Vector3Int> path = new List<Vector3Int>();
+            Vector3Int destIndex = behaviour.GetDestIndex(path, suggestDir);
+
+            await behaviour.TravelByPath(path);
+
+            blocks[destIndex] = behaviour;
+            blocks[destIndex].State = BlockState.Placed;
+            blocks[destIndex].Index = destIndex;
+            blocks[destIndex].name = destIndex.ToString();
+
+        }
+
+        public async Task RemoveBlocks(IEnumerable<BlockBehaviour> matched)
         {
             HashSet<BlockBehaviour> dropBlocks = GetDropBlocks(matched);
 
@@ -124,6 +145,9 @@ namespace ToyParty
                 PoolingManager.Instance.StoreObject(item.BlockType, item.gameObject);
             }
 
+            // 정렬 시작.
+            List<Task> tasks = new List<Task>();
+
             foreach (BlockBehaviour item in dropBlocks.OrderBy( x=> x.transform.position.y))
             {
                 if (item.State == BlockState.Matched)
@@ -132,11 +156,22 @@ namespace ToyParty
                 Vector3Int startIndex = item.Index;
                 blocks[startIndex] = null;
 
-                Vector3Int newIndex = item.GetDestIndex();
+                List<Vector3Int> path = new List<Vector3Int>();
+                Vector3Int newIndex = item.GetDestIndex(path);
                 blocks[newIndex] = item;
                 blocks[newIndex].State = BlockState.Placed;
                 blocks[newIndex].Index = newIndex;
-                blocks[newIndex].transform.position = Grid.CellToWorld(newIndex);
+
+                var task = item.TravelByPath(path);
+                //task.Start();
+                tasks.Add(task);
+
+                //blocks[newIndex].transform.position = Grid.CellToWorld(newIndex);
+            }
+
+            foreach (var task in tasks)
+            {
+                await Awaiters.Until(() => task.IsCompleted);
             }
         }
 
@@ -158,11 +193,9 @@ namespace ToyParty
                 {
                     BlockBehaviour nextBlock = null;
                     Vector3Int validNextIndex = nextIndex;
-                    HexDirection nextDir = HexDirection.None;
 
                     foreach (HexDirection dir in checkDir)
                     {
-                        nextDir = dir;
                         validNextIndex = GetNextIndexByDirection(nextIndex, dir);
                         nextBlock = GetBlockBehaviour(validNextIndex);
 
@@ -173,7 +206,7 @@ namespace ToyParty
                     if (nextBlock == null)
                         break;
 
-                    nextBlock.DropCount++;
+                    nextBlock.IsDrop = true;
                     nextIndex = validNextIndex;
 
                     if (dropBlocks.Contains(nextBlock) == false)
@@ -248,9 +281,14 @@ namespace ToyParty
             return blocks[index];
         }
 
+        public bool IsInPlayArea(Vector3Int index)
+        {
+            return playAreaMap.HasTile(index);
+        }
+
         public bool IsPassable(Vector3Int index)
         {
-            if (playAreaMap.HasTile(index) == false)
+            if (IsInPlayArea(index) == false)
                 return false;
 
             if(blocks.ContainsKey(index))

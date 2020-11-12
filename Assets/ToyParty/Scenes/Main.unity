@@ -2090,6 +2090,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   board: {fileID: 1823856357}
+  blockData:
+  - {fileID: 11400000, guid: 95220f5754afc0049be5dcb833fc8f8c, type: 2}
+  - {fileID: 11400000, guid: 321b747e6bb61594b944987380e622af, type: 2}
+  - {fileID: 11400000, guid: b2b1d3d849f4791428d4bf01473d7d35, type: 2}
+  - {fileID: 11400000, guid: 3ea55f7dd1462594ea62ab883b8a4d7d, type: 2}
+  - {fileID: 11400000, guid: 3cee59a91e532a7488cb6d385be9d57c, type: 2}
+  - {fileID: 11400000, guid: f8abe25da23ac284d87925d289eb4d78, type: 2}
+  dropPoint: {x: 3, y: 0, z: 0}
 --- !u!4 &2017532073
 Transform:
   m_ObjectHideFlags: 0

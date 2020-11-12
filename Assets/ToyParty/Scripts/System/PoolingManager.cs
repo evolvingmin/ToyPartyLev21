@@ -28,6 +28,27 @@ namespace ToyParty.System
             pools[tag].PushNewItem(instanciated);
         }
 
+        public void Subscribe(string tag, Func<GameObject> instanciate)
+        {
+            if (pools.ContainsKey(tag) == false)
+            {
+                pools[tag] = new Pool<GameObject>();
+            }
+
+            pools[tag].SetPoolingFunc(instanciate);
+        }
+
+        public GameObject FetchObject(string tag)
+        {
+            if (pools.ContainsKey(tag) == false)
+            {
+                Debug.Log($"{tag} is not subscribed");
+                return null;
+            }
+
+            return pools[tag].Fetch();
+        }
+
         public void StoreObject(string tag, GameObject store)
         {
             if (pools.ContainsKey(tag) == false)

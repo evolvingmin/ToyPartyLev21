@@ -50,7 +50,7 @@ namespace ToyParty.Collections
             usingCollection.Clear();
         }
 
-        public T Patch()
+        public T Fetch()
         {
             if (readyStack.Count == 0)
             {

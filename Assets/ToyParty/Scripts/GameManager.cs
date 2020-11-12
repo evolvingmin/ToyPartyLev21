@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using ToyParty.Utilities;
 using UnityEngine;
 using ToyParty.Patterns;
+using System.Threading.Tasks;
+using ToyParty.System;
 
 namespace ToyParty
 {
@@ -15,7 +17,22 @@ namespace ToyParty
         [SerializeField]
         private Board board = null;
 
-        public void PlayBlock(Vector3 worldPosition, Vector3 dir)
+        [SerializeField]
+        private List<Block> blockData = new List<Block>();
+
+        public Vector3Int DropPoint { get => dropPoint; }
+        [SerializeField]
+        private Vector3Int dropPoint = Vector3Int.zero;
+
+        private void Start()
+        {
+            foreach (var item in blockData)
+            {
+                PoolingManager.Instance.Subscribe(item.name, item.Instanciate);
+            }
+        }
+
+        public async Task PlayBlock(Vector3 worldPosition, Vector3 dir)
         {
             var result = Board.SwapBlockByDirection(worldPosition, dir);
 
@@ -38,6 +55,8 @@ namespace ToyParty
             Vector3Int startIndex = result.Item2.Item1;
             Vector3Int destIndex = result.Item2.Item2;
 
+            // 일단 destIndex 체크만 시작.
+
             //Dictionary<HexDirection, Queue<BlockBehaviour>> matchedFromStart = Board.GetSameTypeBlocksFromPoint(startIndex);
             Dictionary<HexDirection, Queue<BlockBehaviour>> sameBlocksFromDest = Board.GetSameTypeBlocksFromPoint(destIndex);
 
@@ -46,25 +65,29 @@ namespace ToyParty
             if (matched.Count == 0)
                 return;
 
-            Board.RemoveBlocks(matched.Values);
+            await Board.RemoveBlocks(matched.Values);
 
-            Debug.Log("Done");
-            /// 블록 합산 로직
-            /// 이렇게 3개의 블록이 지워진다고 판단하면, 
-            /// 먼저 보드 정리 혹은 타일 정렬 로직을 수행함
-            /// 정리 수행은 제거되는 블록들을 시작점으로 하여 (Top 방향으로, 다른 제거되는 블록들도 포함)
-            /// 제거 플레그와, 하강 인덱스를 ++ 해 준다.
-            /// 그 다음 제거 에니메이션 수행
-            /// 그 다음 제거 플레그가 담긴 애들만, 하강 인덱스의 길이만큼 에니메이션을 수행한다.
-            /// 여기 레벨에서는 Drop Point가 하나인데, 드랍 포인트 기준으로 빈 공간의 개수를 미리 산정해야 한다.
-            /// 항상 Drop Point가 비어 있을 때에만 활성화 되며 
-            /// 드랍포인트가 가득차지 않았을 때 왼쪽으로 탐색을 시작하여 탐색 시작과 동시에 Queue 로 Index를 넣는다.
-            /// 해당 탐색 로직은 블록 하나당 한번 대응하며, 왼쪽 중간 오른쪽 순으로 탐색이 가능할 때까지 진행하며, 
-            /// 더이상 진행이 불가능하면 (3방향 모두 이동불가) 그 곳을 해당 블록이 도달할 위치로 플레그를 세팅하고
-            /// 그 블록에게 Queue로 페스를 전달하여, 그 페스대로 블록들이 이동하게 한다.
-            /// 
-            /// 드랍랍 로직이 종료되면 새로 넣은 블록들을 대상으로 하여 빠른 체크를 수행하고
-            /// 있으면 제거, 없으면 
+            int emptyCount = Board.EmptyCount;
+
+            Debug.Log($"Empty Count : {emptyCount}");
+
+            //PoolingManager.Instance.FetchObject()
+
+            List<HexDirection> dropDir = new List<HexDirection>() { HexDirection.LeftTop, HexDirection.Top, HexDirection.RightTop };
+            int dirIndex = 0;
+
+            while (Board.EmptyCount > 0)
+            {
+                Block dropBlock = blockData.RandomSelect();
+                GameObject instantiated = PoolingManager.Instance.FetchObject(dropBlock.name);
+                BlockBehaviour behaviour = instantiated.GetComponent<BlockBehaviour>();
+
+                HexDirection suggestDir = (HexDirection)(dirIndex % dropDir.Count);
+
+                await Board.DropBlock(dropPoint, suggestDir, behaviour);
+                dirIndex++;
+            }
+
         }
 
         public enum MatchType
