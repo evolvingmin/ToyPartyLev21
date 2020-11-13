@@ -8,6 +8,7 @@ using UnityEngine.Tilemaps;
 
 using ToyParty.System;
 using ToyParty.Utilities;
+using DG.Tweening;
 
 namespace ToyParty
 {
@@ -233,7 +234,7 @@ namespace ToyParty
         /// <param name="worldPosition"></param>
         /// <param name="dir"></param>
         /// <returns></returns>
-        public (bool, Tuple<Vector3Int,Vector3Int>) SwapBlockByDirection(Vector3 worldPosition, Vector3 dir)
+        public async Task<(bool, Tuple<Vector3Int, Vector3Int>)> SwapBlockByDirection(Vector3 worldPosition, Vector3 dir, float swapSpeed = 5.0f)
         {
             Vector3Int startIndex = Grid.WorldToCell(worldPosition);
             HexDirection hexDir = GetHexDirection(dir);
@@ -248,7 +249,8 @@ namespace ToyParty
             
             if (hasBlock)
             {
-                return (SwapBlock(startIndex, destIndex), new Tuple<Vector3Int, Vector3Int>(startIndex, destIndex));
+                await SwapBlock(startIndex, destIndex, swapSpeed);
+                return (true , new Tuple<Vector3Int, Vector3Int>(startIndex, destIndex));
             }
             else
             {
@@ -256,7 +258,7 @@ namespace ToyParty
             }
         }
 
-        public bool SwapBlock(Vector3Int a, Vector3Int b)
+        public async Task SwapBlock(Vector3Int a, Vector3Int b, float speed = 5.0f)
         {
             var aBlock = GetBlockBehaviour(a);
             var bBlock = GetBlockBehaviour(b);
@@ -270,10 +272,11 @@ namespace ToyParty
             blocks[b].name = b.ToString();
 
             Vector3 tempPos = bBlock.transform.position;
-            // 이제 여기서 부터 Async 신경써야 합니당.
-            bBlock.transform.position = aBlock.transform.position;
-            aBlock.transform.position = tempPos;
-            return true;
+
+            float duration = Vector3.Distance(aBlock.transform.position, tempPos) / speed;
+
+            aBlock.transform.DOMove(tempPos, duration);
+            await bBlock.transform.DOMove(aBlock.transform.position, duration).AsyncWaitForCompletion();
         }
 
         public BlockBehaviour GetBlockBehaviour(Vector3Int index)

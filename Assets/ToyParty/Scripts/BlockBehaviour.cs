@@ -38,7 +38,7 @@ public class BlockBehaviour : LeanSelectableBehaviour
     protected override void OnSelect(LeanFinger finger)
     {
         var cellIndex = GameManager.Instance.Board.Grid.WorldToCell(this.transform.position);
-        Debug.Log($"Selected, cellIndex is  :{cellIndex})");
+        Debug.Log($"Selected, CellIndex is: {cellIndex}");
 
         current = finger;
         touchedTime = Time.realtimeSinceStartup;
@@ -140,12 +140,9 @@ public class BlockBehaviour : LeanSelectableBehaviour
         {
             var nextPosition = GameManager.Instance.Board.Grid.CellToWorld(item);
 
-            while(Vector3.Distance(transform.position, nextPosition) > 0.01f)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, nextPosition, speed * Time.deltaTime);
-                await Awaiters.Seconds(Time.deltaTime);
-            }
-            transform.position = nextPosition;
+            float duration = Vector3.Distance(nextPosition, transform.position) / speed;
+
+            await transform.DOMove(nextPosition, duration).AsyncWaitForCompletion();
         }
     }
 

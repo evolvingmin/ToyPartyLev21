@@ -42,33 +42,45 @@ namespace ToyParty
                     spawnableBlocks.Add(block);
                 }
             }
+
+            InputManager.Instance.PlayState = InputState.Idle;
         }
 
         public async Task PlayBlock(Vector3 worldPosition, Vector3 dir)
         {
-            var result = Board.SwapBlockByDirection(worldPosition, dir);
+            if (InputManager.Instance.PlayState == InputState.Lock)
+                return;
+
+            InputManager.Instance.PlayState = InputState.Lock;
+            Debug.Log($"InputState: {InputManager.Instance.PlayState}");
+
+            var result = await Board.SwapBlockByDirection(worldPosition, dir);
 
             if (result.Item1 == false)
+            {
+                InputManager.Instance.PlayState = InputState.Idle;
+                Debug.Log($"InputState: {InputManager.Instance.PlayState}");
                 return;
+            }
 
             // 해야 하는 것
 
             // 엔드 컨디션 구현(필수) 팽이 다돌리고 나면 미션 종료
 
-            // 코어 루프 중에는 유저 입력 불가능하게 변경
             // 매칭되었을 시 / 유저 스와이프 시 트윈 효과 주어서 시각적인 피드백 제공.
 
-            bool hasMatched = await PlayCoreCycle(new List<Vector3Int>() { result.Item2.Item1, result.Item2.Item2 });
+            // 팽이 상태별 스프라이트 변경, 특히 두번째 상태는 돌아가는 에니메이션 형태다.
 
-            if(hasMatched)
-            {
+            bool anyMatched = await PlayCoreCycle(new List<Vector3Int>() { result.Item2.Item1, result.Item2.Item2 });
 
-            }
-            else
+            if(anyMatched == false)
             {
                 // 아무것도 매치된 것이 없다면 다시 위치를 복구 시킨다.
-                //Board.SwapBlock(result.Item2.Item1, result.Item2.Item2);
+                await Board.SwapBlock(result.Item2.Item1, result.Item2.Item2);
             }
+
+            InputManager.Instance.PlayState = InputState.Idle;
+            Debug.Log($"InputState: {InputManager.Instance.PlayState}");
         }
 
         /// <summary>
@@ -86,14 +98,12 @@ namespace ToyParty
                 return cycleCount != 1;
             }
 
-            Debug.Log($"Main Cycle Count {cycleCount}");
+            Debug.Log($"Core Cycle Count: {cycleCount}");
 
             List<BlockBehaviour> blocksToRemove = new List<BlockBehaviour>(GetBrokenObstacles(matched.Keys));
             blocksToRemove.AddRange(matched.Values);
 
             List <Vector3Int> candidates = new List<Vector3Int>(await Board.RemoveBlocks(blocksToRemove, 10));
-
-            Debug.Log($"Board Empty Count : {Board.EmptyCount}");
 
             List<HexDirection> dropDir = new List<HexDirection>() { HexDirection.LeftTop, HexDirection.Top, HexDirection.RightTop };
             int dirIndex = 0;
