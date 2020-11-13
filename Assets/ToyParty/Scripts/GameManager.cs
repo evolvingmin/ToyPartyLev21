@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using ToyParty.Utilities;
-using UnityEngine;
-using ToyParty.Patterns;
 using System.Threading.Tasks;
+
+using UnityEngine;
+
 using ToyParty.System;
+using ToyParty.Utilities;
+using ToyParty.Patterns;
 
 namespace ToyParty
 {
@@ -39,22 +41,38 @@ namespace ToyParty
             if (result.Item1 == false)
                 return;
 
-            bool hasMatched = await PlayMainCycle(new List<Vector3Int>() { result.Item2.Item1, result.Item2.Item2 });
+            // 해야 하는 것
+            // 팽이 장애물 구현(필수)
+            // 엔드 컨디션 구현(필수) 팽이 다돌리고 나면 미션 종료
+            // 코어 루프 중에는 유저 입력 불가능하게 변경
+            // 매칭되었을 시 / 유저 스와이프 시 트윈 효과 주어서 시각적인 피드백 제공.
+
+            bool hasMatched = await PlayCoreCycle(new List<Vector3Int>() { result.Item2.Item1, result.Item2.Item2 });
+
+            if(hasMatched)
+            {
+
+            }
+            else
+            {
+                // 아무것도 매치된 것이 없다면 다시 위치를 복구 시킨다.
+                //Board.SwapBlock(result.Item2.Item1, result.Item2.Item2);
+            }
         }
 
         /// <summary>
         /// [매칭 블록 찾기 -> 매칭된 블록 제거 -> 블록들 정렬 -> 사라진 블록만큼 추가.] 게임의 핵심루프를 더 이상 매칭되는 블록이 없을 때 까지 반복합니다.
         /// </summary>
-        /// <param name="checkIndexes">매칭 조건을 탐색할 후보자 인덱스들이 담긴 열거형입니다.</param>
+        /// <param name="candidateIndexes">매칭 조건을 탐색할 후보자 인덱스들이 담긴 열거형입니다.</param>
         /// <param name="cycleCount"></param>
         /// <returns>단 한번이라도 메인 사이클이 동작하였다면 true, 아니면 false를 반환합니다.</returns>
-        public async Task<bool> PlayMainCycle(IEnumerable<Vector3Int> checkIndexes, int cycleCount = 1)
+        public async Task<bool> PlayCoreCycle(IEnumerable<Vector3Int> candidateIndexes, int cycleCount = 1)
         {
-            Dictionary<Vector3Int, BlockBehaviour> matched = GetMatchingBlocks(checkIndexes);
+            Dictionary<Vector3Int, BlockBehaviour> matched = GetMatchingBlocks(candidateIndexes);
 
             if (matched.Count == 0)
             {
-                return cycleCount == 1 ? false : true;
+                return cycleCount != 1;
             }
 
             Debug.Log($"Main Cycle Count {cycleCount}");
@@ -68,8 +86,8 @@ namespace ToyParty
 
             while (Board.EmptyCount > 0)
             {
-                Block dropBlock = blockData.RandomSelect();
-                GameObject instantiated = PoolingManager.Instance.FetchObject(dropBlock.name);
+                Block newBlock = blockData.RandomSelect();
+                GameObject instantiated = PoolingManager.Instance.FetchObject(newBlock.name);
                 BlockBehaviour behaviour = instantiated.GetComponent<BlockBehaviour>();
 
                 HexDirection suggestDir = (HexDirection)(dirIndex % dropDir.Count);
@@ -79,7 +97,8 @@ namespace ToyParty
                 dirIndex++;
             }
 
-            return await PlayMainCycle(candidates, cycleCount+1);
+            // 매칭 검사를 진행할 블록들은 정렬로 인해 위치가 옮겨진 블록들과, 새로 추가된 블록들을 대상으로 합니다.
+            return await PlayCoreCycle(candidates, cycleCount + 1);
         }
 
         public Dictionary<Vector3Int, BlockBehaviour> GetMatchingBlocks(IEnumerable<Vector3Int> checkIndexes)
@@ -98,7 +117,6 @@ namespace ToyParty
                     
                     matched.Add(candidate.Key, candidate.Value);
                 }
-
             }
 
             return matched;
@@ -122,7 +140,6 @@ namespace ToyParty
 
             Dictionary<Vector3Int, BlockBehaviour> matched = new Dictionary<Vector3Int, BlockBehaviour>();
             
-
             bool hasMatch = false;
 
             // 3방향 검사, 여기의 검사 방식이 정교해 질 수록 (GetSameTypeBlocksFromPoint 도) 다양한 메치조건을 만들 수 있다.
@@ -155,8 +172,5 @@ namespace ToyParty
 
             return matched;
         }
-
-        
     }
-
 }

@@ -9,7 +9,7 @@ namespace ToyParty.Utilities
     public static class RandomEx
     {
         /// <summary>
-        /// IEnumerable 에서 랜덤하게 하나를 선택 해 반환 합니다.
+        /// 열거형에서 랜덤하게 하나를 선택 해 반환 합니다.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="enumerable"></param>

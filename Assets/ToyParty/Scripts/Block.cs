@@ -19,20 +19,16 @@ namespace ToyParty
         Obstacle_SpinningTop
     }
 
-    // 이리저리 굴려본 결과 레벨 배치 전용으로만 활용하는게 좋다.
     public class Block : TileBase
     {
         [SerializeField]
         private Color color;
 
-
         [SerializeField]
         private Sprite sprite;
 
-
         [SerializeField]
         private GameObject prefab = null;
-
 
         public GameObject Instanciate()
         {

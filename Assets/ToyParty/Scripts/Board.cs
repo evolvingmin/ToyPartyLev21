@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ToyParty.System;
-using ToyParty.Utilities;
+
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+using ToyParty.System;
+using ToyParty.Utilities;
+
 namespace ToyParty
 {
+    // 한 블록을 기준으로 이웃 블록으로 접근할 때 사용하는 방향값.
     public enum HexDirection
     {
         None = 0,
@@ -51,8 +54,6 @@ namespace ToyParty
 
         [SerializeField]
         private Grid grid = null;
-
-        
 
         private void Start()
         {
@@ -130,6 +131,12 @@ namespace ToyParty
             blocks[destIndex].name = destIndex.ToString();
         }
 
+        /// <summary>
+        /// 블록들을 제거하고, 제거된 블록으로 인해 위치를 옮겨야 할 블록들의 위치를 변경합니다. 
+        /// </summary>
+        /// <param name="blocksToRemove">제거될 블록입니다.</param>
+        /// <param name="speed"></param>
+        /// <returns>위치가 변경된 블록들의 인덱스들을 열거형으로 반환합니다.</returns>
         public async Task<IEnumerable<Vector3Int>> RemoveBlocks(IEnumerable<BlockBehaviour> blocksToRemove, float speed = 10.0f)
         {
             HashSet<BlockBehaviour> dirtyBlocks = GetDirtyBlocks(blocksToRemove);
@@ -213,7 +220,6 @@ namespace ToyParty
                         dirtyBlocks.Add(nextBlock);
                         nextBlock.State = BlockState.Drop;
                     }
-                        
                 }
             }
 
@@ -229,9 +235,8 @@ namespace ToyParty
         public (bool, Tuple<Vector3Int,Vector3Int>) SwapBlockByDirection(Vector3 worldPosition, Vector3 dir)
         {
             Vector3Int startIndex = Grid.WorldToCell(worldPosition);
-            var hexDir = GetHexDirection(dir);
+            HexDirection hexDir = GetHexDirection(dir);
 
-            
             Vector3Int destIndex = GetNextIndexByDirection(startIndex, hexDir);
 
             if (startIndex == destIndex)
