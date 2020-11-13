@@ -12,6 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 278a1decb803aab408c72d7c4afc1307, type: 3}
   m_Name: Block_Red
   m_EditorClassIdentifier: 
-  color: {r: 0.96470594, g: 0.34509805, b: 0.19215688, a: 1}
-  sprite: {fileID: 21300000, guid: 5c681baa8315ae5498a06165e2830f01, type: 3}
-  prefab: {fileID: 5880818552890077640, guid: 744f75a92f5cc90429c0399b791c3417, type: 3}
+  blockData:
+    color: {r: 0.96470594, g: 0.34509805, b: 0.19215688, a: 1}
+    sprite: {fileID: 21300000, guid: 5c681baa8315ae5498a06165e2830f01, type: 3}
+    prefab: {fileID: 5880818552890077640, guid: 744f75a92f5cc90429c0399b791c3417,
+      type: 3}
+    matchType: 0
+    durability: 0

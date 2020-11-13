@@ -20,7 +20,11 @@ namespace ToyParty
         private Board board = null;
 
         [SerializeField]
-        private List<Block> blockData = new List<Block>();
+        private List<Block> blocks = new List<Block>();
+        private List<Block> spawnableBlocks = new List<Block>();
+        private Dictionary<string, BlockData> blockDataByTag = new Dictionary<string, BlockData>();
+
+        public BlockData GetBlockData(string blockTag) => blockDataByTag.ContainsKey(blockTag) ? blockDataByTag[blockTag] : default;
 
         public Vector3Int DropPoint { get => dropPoint; }
         [SerializeField]
@@ -28,9 +32,15 @@ namespace ToyParty
 
         private void Start()
         {
-            foreach (var item in blockData)
+            foreach (Block block in blocks)
             {
-                PoolingManager.Instance.Subscribe(item.name, item.Instanciate);
+                PoolingManager.Instance.Subscribe(block.name, block.Instanciate);
+                blockDataByTag.Add(block.name, block.Data);
+
+                if(block.IsSpawnable())
+                {
+                    spawnableBlocks.Add(block);
+                }
             }
         }
 
@@ -42,8 +52,9 @@ namespace ToyParty
                 return;
 
             // 해야 하는 것
-            // 팽이 장애물 구현(필수)
+
             // 엔드 컨디션 구현(필수) 팽이 다돌리고 나면 미션 종료
+
             // 코어 루프 중에는 유저 입력 불가능하게 변경
             // 매칭되었을 시 / 유저 스와이프 시 트윈 효과 주어서 시각적인 피드백 제공.
 
@@ -66,7 +77,7 @@ namespace ToyParty
         /// <param name="candidateIndexes">매칭 조건을 탐색할 후보자 인덱스들이 담긴 열거형입니다.</param>
         /// <param name="cycleCount"></param>
         /// <returns>단 한번이라도 메인 사이클이 동작하였다면 true, 아니면 false를 반환합니다.</returns>
-        public async Task<bool> PlayCoreCycle(IEnumerable<Vector3Int> candidateIndexes, int cycleCount = 1)
+        private async Task<bool> PlayCoreCycle(IEnumerable<Vector3Int> candidateIndexes, int cycleCount = 1)
         {
             Dictionary<Vector3Int, BlockBehaviour> matched = GetMatchingBlocks(candidateIndexes);
 
@@ -77,7 +88,10 @@ namespace ToyParty
 
             Debug.Log($"Main Cycle Count {cycleCount}");
 
-            List<Vector3Int> candidates = new List<Vector3Int>(await Board.RemoveBlocks(matched.Values, 10));
+            List<BlockBehaviour> blocksToRemove = new List<BlockBehaviour>(GetBrokenObstacles(matched.Keys));
+            blocksToRemove.AddRange(matched.Values);
+
+            List <Vector3Int> candidates = new List<Vector3Int>(await Board.RemoveBlocks(blocksToRemove, 10));
 
             Debug.Log($"Board Empty Count : {Board.EmptyCount}");
 
@@ -86,7 +100,7 @@ namespace ToyParty
 
             while (Board.EmptyCount > 0)
             {
-                Block newBlock = blockData.RandomSelect();
+                Block newBlock = spawnableBlocks.RandomSelect();
                 GameObject instantiated = PoolingManager.Instance.FetchObject(newBlock.name);
                 BlockBehaviour behaviour = instantiated.GetComponent<BlockBehaviour>();
 
@@ -101,7 +115,24 @@ namespace ToyParty
             return await PlayCoreCycle(candidates, cycleCount + 1);
         }
 
-        public Dictionary<Vector3Int, BlockBehaviour> GetMatchingBlocks(IEnumerable<Vector3Int> checkIndexes)
+        private IEnumerable<BlockBehaviour> GetBrokenObstacles(IEnumerable<Vector3Int> matched)
+        {
+            List<BlockBehaviour> brokenObstacles = new List<BlockBehaviour>();
+
+            foreach (var neighbour in Board.GetNeighbours(matched))
+            {
+                bool isBroken = neighbour.ReduceDurability();
+
+                if (isBroken == false)
+                    continue;
+
+                brokenObstacles.Add(neighbour);
+            }
+
+            return brokenObstacles;
+        }
+
+        private Dictionary<Vector3Int, BlockBehaviour> GetMatchingBlocks(IEnumerable<Vector3Int> checkIndexes)
         {
             Dictionary<Vector3Int, BlockBehaviour> matched = new Dictionary<Vector3Int, BlockBehaviour>();
 
@@ -122,25 +153,24 @@ namespace ToyParty
             return matched;
         }
 
-        public enum MatchType
-        {
-            ShortLine, // 3줄짜리
-            LongLine,  // 4줄이상, 이 게임에서는 특수 블록이 만들어질 수 있음.
-        }
-
         /// <summary>
         /// 같은 타입의 블록들이 실제로 매칭되어 제거 될 수 있는지 검사하고, 그 블록들을 돌려준다.
         /// </summary>
         /// <param name="startIndex"></param>
         /// <param name="sameBlocks"></param>
         /// <returns></returns>
-        public Dictionary<Vector3Int,BlockBehaviour> CheckMatchingConditions(Vector3Int startIndex, Dictionary<HexDirection, Queue<BlockBehaviour>> sameBlocks)
+        private Dictionary<Vector3Int,BlockBehaviour> CheckMatchingConditions(Vector3Int startIndex, Dictionary<HexDirection, Queue<BlockBehaviour>> sameBlocks)
         {
             BlockBehaviour start = Board.GetBlockBehaviour(startIndex);
 
             Dictionary<Vector3Int, BlockBehaviour> matched = new Dictionary<Vector3Int, BlockBehaviour>();
             
             bool hasMatch = false;
+            
+            if(GetBlockData(start.BlockTag).matchType == MatchType.Obstacle)
+            {
+                return matched;
+            }
 
             // 3방향 검사, 여기의 검사 방식이 정교해 질 수록 (GetSameTypeBlocksFromPoint 도) 다양한 메치조건을 만들 수 있다.
             // 일단 라인 체크를 목표로 진행한다.

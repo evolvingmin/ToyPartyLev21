@@ -1,10 +1,12 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Diagnostics;
 using ToyParty.System;
+using Sirenix.OdinInspector;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -12,32 +14,46 @@ using UnityEditor;
 
 namespace ToyParty
 {
-    public enum BlockType
+    public enum MatchType
     {
-        Default,
-        Special,
-        Obstacle_SpinningTop
+        Default, // 일반적인 게임룰, 3개 이상의 같은 블록이 모였을 때 메치됨.
+        Special, // 이 게임의 특수 블록, 기본적인 매치 조건과 마찬가지로, 특수블록 타입끼리 매치될 수 있음 
+        Obstacle // 자신은 매치조건에 포함되지 않고, 주변부 블록이 매치되어 파괴되면, 영향을 받는 타입.
+    }
+
+    [Serializable]
+    public struct BlockData
+    {
+        public Color color;
+        public Sprite sprite;
+        public GameObject prefab;
+        public MatchType matchType;
+        [ShowIf("@this.matchType == MatchType.Obstacle")]
+        public int durability;
+    }
+
+    public static class BlockEx
+    {
+        public static bool IsSpawnable(this Block block)
+        {
+            return block.Data.matchType == MatchType.Default;
+        }
     }
 
     public class Block : TileBase
     {
         [SerializeField]
-        private Color color;
-
-        [SerializeField]
-        private Sprite sprite;
-
-        [SerializeField]
-        private GameObject prefab = null;
+        private BlockData blockData;
+        public BlockData Data { get => blockData; }
 
         public GameObject Instanciate()
         {
-            GameObject instanciate = GameObject.Instantiate(prefab);
+            GameObject instanciate = GameObject.Instantiate(Data.prefab);
             instanciate.gameObject.SetActive(false);
             instanciate.transform.SetParent(PoolingManager.Instance.transform);
 
             var behaviour = instanciate.GetComponent<BlockBehaviour>();
-            behaviour.Init(name, GameManager.Instance.DropPoint, sprite, color);
+            behaviour.Init(name, GameManager.Instance.DropPoint, Data);
             
             return instanciate;
         }
@@ -47,7 +63,7 @@ namespace ToyParty
             if(go != null)
             {
                 var behaviour = go.GetComponent<BlockBehaviour>();
-                behaviour.Init(name, position, sprite, color);
+                behaviour.Init(name, position, Data);
                 GameManager.Instance.Board.AddBlockFromLevel(position, name, behaviour);
             }
 
@@ -56,8 +72,8 @@ namespace ToyParty
 
         public override void GetTileData(Vector3Int position, ITilemap tilemap, ref TileData tileData)
         {
-            tileData.gameObject = prefab;
-            tileData.color = color;
+            tileData.gameObject = Data.prefab;
+            tileData.color = Data.color;
             
             if(Application.isPlaying)
             {
@@ -65,7 +81,7 @@ namespace ToyParty
             }
             else
             {
-                tileData.sprite = sprite;
+                tileData.sprite = Data.sprite;
             }
 
             tileData.flags = TileFlags.LockColor | TileFlags.InstantiateGameObjectRuntimeOnly;

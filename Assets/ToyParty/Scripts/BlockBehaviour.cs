@@ -26,12 +26,14 @@ public class BlockBehaviour : LeanSelectableBehaviour
     public BlockState State { get; set; } = BlockState.Placed;
 
     [ShowInInspector]
-    public string BlockType { get; private set; }
+    public string BlockTag { get; private set; }
     [ShowInInspector]
     public Vector3Int Index { get; set; }
 
     [ShowInInspector]
     public bool IsDirty { get; set; } = false;
+
+    private int Durability { get; set; } = 0;
 
     protected override void OnSelect(LeanFinger finger)
     {
@@ -53,16 +55,19 @@ public class BlockBehaviour : LeanSelectableBehaviour
         current = null;
     }
 
-    public void Init(string name, Vector3Int position, Sprite sprite, Color color)
+    public void Init(string blockTag, Vector3Int position, BlockData blockData)
     {
         this.name = position.ToString();
-        BlockType = name;
+        BlockTag = blockTag;
         Index = position;
         State = BlockState.Placed;
         IsDirty = false;
+
         var renderer = GetComponent<SpriteRenderer>();
-        renderer.color = color;
-        renderer.sprite = sprite;
+        renderer.color = blockData.color;
+        renderer.sprite = blockData.sprite;
+
+        Durability = blockData.durability;
     }
 
     /// <summary>
@@ -142,5 +147,15 @@ public class BlockBehaviour : LeanSelectableBehaviour
             }
             transform.position = nextPosition;
         }
+    }
+
+    public bool ReduceDurability()
+    {
+        if (GameManager.Instance.GetBlockData(BlockTag).matchType != MatchType.Obstacle)
+            return false;
+
+        Durability--;
+
+        return Durability <= 0;
     }
 }

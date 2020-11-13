@@ -102,7 +102,7 @@ namespace ToyParty
                     if (compare == null)
                         break;
 
-                    if (start.BlockType != compare.BlockType)
+                    if (start.BlockTag != compare.BlockTag)
                         break;
 
                     sameBlocksByDir.Enqueue(compare);
@@ -142,11 +142,12 @@ namespace ToyParty
             HashSet<BlockBehaviour> dirtyBlocks = GetDirtyBlocks(blocksToRemove);
 
             // 매치된 블록 제거
-            foreach (BlockBehaviour item in blocksToRemove)
+            foreach (BlockBehaviour blockToRemove in blocksToRemove)
             {
-                blocks[item.Index] = null;
-                item.State = BlockState.Matched;
-                PoolingManager.Instance.StoreObject(item.BlockType, item.gameObject);
+                blocks[blockToRemove.Index] = null;
+                blockToRemove.State = BlockState.Matched;
+                PoolingManager.Instance.StoreObject(blockToRemove.BlockTag, blockToRemove.gameObject);
+
             }
 
             // 정렬 시작.
@@ -299,6 +300,63 @@ namespace ToyParty
                     return false;
             }
             return true;
+        }
+
+        public IEnumerable<BlockBehaviour> GetNeighbours(IEnumerable<BlockBehaviour> behaviours)
+        {
+            HashSet<BlockBehaviour> neighbours = new HashSet<BlockBehaviour>();
+
+            foreach (var behaviour in behaviours)
+            {
+                var neighboursFromIndex = GetNeighbours(behaviour.Index);
+                foreach (var neighbourFromIndex in neighboursFromIndex)
+                {
+                    if (neighbours.Contains(neighbourFromIndex) || behaviours.Contains(neighbourFromIndex))
+                        continue;
+
+                    neighbours.Add(neighbourFromIndex);
+                }
+            }
+
+            return neighbours;
+        }
+
+        public IEnumerable<BlockBehaviour> GetNeighbours(IEnumerable<Vector3Int> indexes)
+        {
+            HashSet<BlockBehaviour> neighbours = new HashSet<BlockBehaviour>();
+
+            foreach (var index in indexes)
+            {
+                var neighboursFromIndex = GetNeighbours(index);
+                foreach (var neighbourFromIndex in neighboursFromIndex)
+                {
+                    if (neighbours.Contains(neighbourFromIndex) || indexes.Contains(neighbourFromIndex.Index))
+                        continue;
+
+                    neighbours.Add(neighbourFromIndex);
+                }
+            }
+
+            return neighbours;
+        }
+
+        public IEnumerable<BlockBehaviour> GetNeighbours(Vector3Int index)
+        {
+            List<BlockBehaviour> neighbours = new List<BlockBehaviour>();
+
+            for (HexDirection dir = HexDirection.LeftTop; dir <= HexDirection.LeftBottom; dir++)
+            {
+                Vector3Int checkIndex = GetNextIndexByDirection(index, dir);
+
+                BlockBehaviour block = GetBlockBehaviour(checkIndex);
+
+                if (block == null)
+                    continue;
+
+                neighbours.Add(block);
+            }
+
+            return neighbours;
         }
 
         public static Vector3Int GetNextIndexByDirection(Vector3Int startIndex, HexDirection hexDir)
