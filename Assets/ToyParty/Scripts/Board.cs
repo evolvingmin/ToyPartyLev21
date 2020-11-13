@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 using ToyParty.System;
@@ -115,30 +113,29 @@ namespace ToyParty
             return sameBlocks;
         }
 
-        public async Task DropBlock(Vector3Int dropPoint, HexDirection suggestDir, BlockBehaviour behaviour)
+        public async Task DropBlock(Vector3Int startIndex, HexDirection suggestDir, BlockBehaviour behaviour, float speed = 10.0f)
         {
             behaviour.transform.SetParent(this.transform);
-            behaviour.transform.position = Grid.CellToWorld(dropPoint);
-            behaviour.Index = dropPoint;
+            behaviour.transform.position = Grid.CellToWorld(startIndex);
+            behaviour.Index = startIndex;
             behaviour.gameObject.SetActive(true);
             List<Vector3Int> path = new List<Vector3Int>();
             Vector3Int destIndex = behaviour.GetDestIndex(path, suggestDir);
 
-            await behaviour.TravelByPath(path);
+            await behaviour.TravelByPath(path, speed);
 
             blocks[destIndex] = behaviour;
             blocks[destIndex].State = BlockState.Placed;
             blocks[destIndex].Index = destIndex;
             blocks[destIndex].name = destIndex.ToString();
-
         }
 
-        public async Task RemoveBlocks(IEnumerable<BlockBehaviour> matched)
+        public async Task<IEnumerable<Vector3Int>> RemoveBlocks(IEnumerable<BlockBehaviour> blocksToRemove, float speed = 10.0f)
         {
-            HashSet<BlockBehaviour> dropBlocks = GetDropBlocks(matched);
+            HashSet<BlockBehaviour> dirtyBlocks = GetDirtyBlocks(blocksToRemove);
 
             // 매치된 블록 제거
-            foreach (BlockBehaviour item in matched)
+            foreach (BlockBehaviour item in blocksToRemove)
             {
                 blocks[item.Index] = null;
                 item.State = BlockState.Matched;
@@ -148,40 +145,42 @@ namespace ToyParty
             // 정렬 시작.
             List<Task> tasks = new List<Task>();
 
-            foreach (BlockBehaviour item in dropBlocks.OrderBy( x=> x.transform.position.y))
+            foreach (BlockBehaviour block in dirtyBlocks.OrderBy( x=> x.transform.position.y))
             {
-                if (item.State == BlockState.Matched)
+                if (block.State == BlockState.Matched)
                     continue;
 
-                Vector3Int startIndex = item.Index;
+                Vector3Int startIndex = block.Index;
                 blocks[startIndex] = null;
 
                 List<Vector3Int> path = new List<Vector3Int>();
-                Vector3Int newIndex = item.GetDestIndex(path);
-                blocks[newIndex] = item;
+                Vector3Int newIndex = block.GetDestIndex(path);
+                blocks[newIndex] = block;
                 blocks[newIndex].State = BlockState.Placed;
                 blocks[newIndex].Index = newIndex;
 
-                var task = item.TravelByPath(path);
-                //task.Start();
+                Task task = block.TravelByPath(path, speed);
                 tasks.Add(task);
-
-                //blocks[newIndex].transform.position = Grid.CellToWorld(newIndex);
             }
 
+            // 모든 개별 블록들의 TravelByPath가 끝날 때 까지 기다림.
             foreach (var task in tasks)
             {
                 await Awaiters.Until(() => task.IsCompleted);
             }
+
+            return dirtyBlocks.Select(x => x.Index);
         }
 
+
         /// <summary>
-        /// 매칭되어 제거될 블록 기준으로 위에 있는 모든 블록들에게 떨어질 방향을 예약하고, 떨어질 블록들을 반환합니다.
+        /// 주어진 블록들이 제거될 때, 정렬이 필요한 블록들을 체크하고, 해당 블록들을 가져 옵니다.
         /// </summary>
         /// <param name="matched"></param>
-        private HashSet<BlockBehaviour> GetDropBlocks(IEnumerable<BlockBehaviour> matched)
+        /// <returns></returns>
+        private HashSet<BlockBehaviour> GetDirtyBlocks(IEnumerable<BlockBehaviour> matched)
         {
-            HashSet<BlockBehaviour> dropBlocks = new HashSet<BlockBehaviour>();
+            HashSet<BlockBehaviour> dirtyBlocks = new HashSet<BlockBehaviour>();
 
             List<HexDirection> checkDir = new List<HexDirection>() { HexDirection.Top, HexDirection.RightTop, HexDirection.LeftTop };
 
@@ -206,22 +205,20 @@ namespace ToyParty
                     if (nextBlock == null)
                         break;
 
-                    nextBlock.IsDrop = true;
+                    nextBlock.IsDirty = true;
                     nextIndex = validNextIndex;
 
-                    if (dropBlocks.Contains(nextBlock) == false)
+                    if (dirtyBlocks.Contains(nextBlock) == false)
                     {
-                        dropBlocks.Add(nextBlock);
+                        dirtyBlocks.Add(nextBlock);
                         nextBlock.State = BlockState.Drop;
                     }
                         
                 }
             }
 
-            return dropBlocks;
+            return dirtyBlocks;
         }
-
-
 
         /// <summary>
         /// 

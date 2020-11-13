@@ -39,39 +39,29 @@ namespace ToyParty
             if (result.Item1 == false)
                 return;
 
-            /// 계략적으로 생각한 검사 로직
-            /// 스왑이 가능하다고 할 때, start/dest 와 해당 스왑이 유효하다고 판단하면
-            /// 그 두점 모두 검사 대상으로 잡는다.
-            /// 또한 dir 방향 검사 별로라고 생각하는데, 그냥 콜라이더 충돌처리가 더 나을지도 모른다. 이건 
-            /// 막판에 수정가능하니 후순위로 잡자.
-            /// 일단 dest를 기준으로 잡아서 HexDirection을 top 부터 오른쪽으로 돌아서 
-            /// 똑같은 방향으로 계속 나아가서, dest에 있는 블록과 같지않으면 스킵, 같으면 넣어서
-            /// 최종적으로 Dictionary<HexDirection, Queue<BlockBehaviour>> 형태로 6개를 가져오게 만들고
-            /// 이 자료구조를 바탕으로 진짜로 스왑이 가능한지 아닌지 판단한다
-            /// 여기서 일단 저 자료형에 아무것도 없으면 기본적으로 아예 스왑이 되지 않는 것이고
-            /// 가령 Top에 한개, Bottom에 한개 있으면 dest까지 포함하여 총 3개가 될 것이고
-            /// 이걸로 유효하니 해당 3개의 블록을 지우고 점수 로직에 합산하는 것이다
+            bool hasMatched = await PlayMainCycle(new List<Vector3Int>() { result.Item2.Item1, result.Item2.Item2 });
+        }
 
-            Vector3Int startIndex = result.Item2.Item1;
-            Vector3Int destIndex = result.Item2.Item2;
-
-            // 일단 destIndex 체크만 시작.
-
-            //Dictionary<HexDirection, Queue<BlockBehaviour>> matchedFromStart = Board.GetSameTypeBlocksFromPoint(startIndex);
-            Dictionary<HexDirection, Queue<BlockBehaviour>> sameBlocksFromDest = Board.GetSameTypeBlocksFromPoint(destIndex);
-
-            Dictionary<Vector3Int, BlockBehaviour> matched = GetMatchingBlocks(destIndex, sameBlocksFromDest);
+        /// <summary>
+        /// [매칭 블록 찾기 -> 매칭된 블록 제거 -> 블록들 정렬 -> 사라진 블록만큼 추가.] 게임의 핵심루프를 더 이상 매칭되는 블록이 없을 때 까지 반복합니다.
+        /// </summary>
+        /// <param name="checkIndexes">매칭 조건을 탐색할 후보자 인덱스들이 담긴 열거형입니다.</param>
+        /// <param name="cycleCount"></param>
+        /// <returns>단 한번이라도 메인 사이클이 동작하였다면 true, 아니면 false를 반환합니다.</returns>
+        public async Task<bool> PlayMainCycle(IEnumerable<Vector3Int> checkIndexes, int cycleCount = 1)
+        {
+            Dictionary<Vector3Int, BlockBehaviour> matched = GetMatchingBlocks(checkIndexes);
 
             if (matched.Count == 0)
-                return;
+            {
+                return cycleCount == 1 ? false : true;
+            }
 
-            await Board.RemoveBlocks(matched.Values);
+            Debug.Log($"Main Cycle Count {cycleCount}");
 
-            int emptyCount = Board.EmptyCount;
+            List<Vector3Int> candidates = new List<Vector3Int>(await Board.RemoveBlocks(matched.Values, 10));
 
-            Debug.Log($"Empty Count : {emptyCount}");
-
-            //PoolingManager.Instance.FetchObject()
+            Debug.Log($"Board Empty Count : {Board.EmptyCount}");
 
             List<HexDirection> dropDir = new List<HexDirection>() { HexDirection.LeftTop, HexDirection.Top, HexDirection.RightTop };
             int dirIndex = 0;
@@ -85,9 +75,33 @@ namespace ToyParty
                 HexDirection suggestDir = (HexDirection)(dirIndex % dropDir.Count);
 
                 await Board.DropBlock(dropPoint, suggestDir, behaviour);
+                candidates.Add(behaviour.Index);
                 dirIndex++;
             }
 
+            return await PlayMainCycle(candidates, cycleCount+1);
+        }
+
+        public Dictionary<Vector3Int, BlockBehaviour> GetMatchingBlocks(IEnumerable<Vector3Int> checkIndexes)
+        {
+            Dictionary<Vector3Int, BlockBehaviour> matched = new Dictionary<Vector3Int, BlockBehaviour>();
+
+            foreach (var index in checkIndexes)
+            {
+                Dictionary<HexDirection, Queue<BlockBehaviour>> sameBlocksFromDest = Board.GetSameTypeBlocksFromPoint(index);
+                Dictionary<Vector3Int, BlockBehaviour> candidates = CheckMatchingConditions(index, sameBlocksFromDest);
+
+                foreach (var candidate in candidates)
+                {
+                    if (matched.ContainsKey(candidate.Key))
+                        continue;
+                    
+                    matched.Add(candidate.Key, candidate.Value);
+                }
+
+            }
+
+            return matched;
         }
 
         public enum MatchType
@@ -102,7 +116,7 @@ namespace ToyParty
         /// <param name="startIndex"></param>
         /// <param name="sameBlocks"></param>
         /// <returns></returns>
-        public Dictionary<Vector3Int,BlockBehaviour> GetMatchingBlocks(Vector3Int startIndex, Dictionary<HexDirection, Queue<BlockBehaviour>> sameBlocks)
+        public Dictionary<Vector3Int,BlockBehaviour> CheckMatchingConditions(Vector3Int startIndex, Dictionary<HexDirection, Queue<BlockBehaviour>> sameBlocks)
         {
             BlockBehaviour start = Board.GetBlockBehaviour(startIndex);
 

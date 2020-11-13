@@ -18,7 +18,6 @@ public enum BlockState
 
 public class BlockBehaviour : LeanSelectableBehaviour
 {
-
     private LeanFinger current = null;
     private float touchedTime = 0.0f;
     private Vector3 worldPosition;
@@ -32,7 +31,7 @@ public class BlockBehaviour : LeanSelectableBehaviour
     public Vector3Int Index { get; set; }
 
     [ShowInInspector]
-    public bool IsDrop { get; set; } = false;
+    public bool IsDirty { get; set; } = false;
 
     protected override void OnSelect(LeanFinger finger)
     {
@@ -60,7 +59,7 @@ public class BlockBehaviour : LeanSelectableBehaviour
         BlockType = name;
         Index = position;
         State = BlockState.Placed;
-        IsDrop = false;
+        IsDirty = false;
         var renderer = GetComponent<SpriteRenderer>();
         renderer.color = color;
         renderer.sprite = sprite;
@@ -77,8 +76,6 @@ public class BlockBehaviour : LeanSelectableBehaviour
         Board board = GameManager.Instance.Board;
 
         Vector3Int currentIndex = Index;
-        //int dropCount = DropCount;
-
         List<HexDirection> checkDir = new List<HexDirection>() { HexDirection.Bottom, HexDirection.LeftBottom, HexDirection.RightBottom };
 
         bool isFirst = true;
@@ -110,7 +107,6 @@ public class BlockBehaviour : LeanSelectableBehaviour
                 }
             }
 
-
             if (isPassable == false)
                 break;
 
@@ -128,9 +124,12 @@ public class BlockBehaviour : LeanSelectableBehaviour
         return currentIndex;
     }
 
-    const float dropSpeed = 5f;
-
-    public async Task TravelByPath(List<Vector3Int> path)
+    /// <summary>
+    /// 현재 position에서 제공된 path(cellIndex)로 순서대로 이동합니다.
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public async Task TravelByPath(List<Vector3Int> path, float speed = 10.0f)
     {
         foreach (var item in path)
         {
@@ -138,7 +137,7 @@ public class BlockBehaviour : LeanSelectableBehaviour
 
             while(Vector3.Distance(transform.position, nextPosition) > 0.01f)
             {
-                transform.position = Vector3.MoveTowards(transform.position, nextPosition, dropSpeed * Time.deltaTime);
+                transform.position = Vector3.MoveTowards(transform.position, nextPosition, speed * Time.deltaTime);
                 await Awaiters.Seconds(Time.deltaTime);
             }
             transform.position = nextPosition;

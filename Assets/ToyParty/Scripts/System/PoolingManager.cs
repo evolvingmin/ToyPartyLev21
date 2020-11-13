@@ -38,6 +38,11 @@ namespace ToyParty.System
             pools[tag].SetPoolingFunc(instanciate);
         }
 
+        /// <summary>
+        /// 해당 tag로 지정된 게임 오브젝트 하나를 가져 옵니다.
+        /// </summary>
+        /// <param name="tag"></param>
+        /// <returns></returns>
         public GameObject FetchObject(string tag)
         {
             if (pools.ContainsKey(tag) == false)
