@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blockData:
     color: {r: 1, g: 1, b: 1, a: 1}
-    sprite: {fileID: 21300000, guid: fd3f6e79dacbda242893790f63a1b3a0, type: 3}
+    sprite: {fileID: 21300000, guid: 2edbcff76972be545b0fc1f2fa176a78, type: 3}
     prefab: {fileID: 5880818552890077640, guid: 744f75a92f5cc90429c0399b791c3417,
       type: 3}
     matchType: 2

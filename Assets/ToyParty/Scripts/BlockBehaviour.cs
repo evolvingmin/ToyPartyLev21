@@ -35,6 +35,12 @@ public class BlockBehaviour : LeanSelectableBehaviour
 
     private int Durability { get; set; } = 0;
 
+    [SerializeField]
+    private SpriteRenderer spriteRenderer = null;
+
+    [SerializeField]
+    private Animator animator = null;
+
     protected override void OnSelect(LeanFinger finger)
     {
         var cellIndex = GameManager.Instance.Board.Grid.WorldToCell(this.transform.position);
@@ -60,6 +66,7 @@ public class BlockBehaviour : LeanSelectableBehaviour
         BlockTag = blockTag;
         Index = position;
         State = BlockState.Placed;
+        animator.WriteDefaultValues();
         
         ResetBehaviour(position, blockData);
     }
@@ -70,9 +77,8 @@ public class BlockBehaviour : LeanSelectableBehaviour
         transform.position = GameManager.Instance.Board.Grid.CellToWorld(position);
         Index = position;
 
-        var renderer = GetComponent<SpriteRenderer>();
-        renderer.color = data.color;
-        renderer.sprite = data.sprite;
+        spriteRenderer.color = data.color;
+        spriteRenderer.sprite = data.sprite;
 
         IsDirty = false;
         Durability = data.durability;
@@ -163,6 +169,13 @@ public class BlockBehaviour : LeanSelectableBehaviour
             return false;
 
         Durability--;
+
+        if(Durability != 0)
+        {
+            // 팽이는 1정도의 피해만 견딜 수 있지만, 다른 오브젝트의 경우 여러 대미지를 견딜 수 있다. 
+            // 이에 따른 AnimState를 달리 정의할 수 있다. 
+            animator.SetInteger("Damage", animator.GetInteger("Damage") + 1);
+        }
 
         return Durability <= 0;
     }
