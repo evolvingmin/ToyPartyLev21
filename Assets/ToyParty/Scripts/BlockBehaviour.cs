@@ -57,17 +57,26 @@ public class BlockBehaviour : LeanSelectableBehaviour
 
     public void Init(string blockTag, Vector3Int position, BlockData blockData)
     {
-        this.name = position.ToString();
         BlockTag = blockTag;
         Index = position;
         State = BlockState.Placed;
-        IsDirty = false;
+        
+        ResetBehaviour(position, blockData);
+    }
+
+    public void ResetBehaviour(Vector3Int position, BlockData data)
+    {
+        this.name = position.ToString();
+        transform.position = GameManager.Instance.Board.Grid.CellToWorld(position);
+        Index = position;
 
         var renderer = GetComponent<SpriteRenderer>();
-        renderer.color = blockData.color;
-        renderer.sprite = blockData.sprite;
+        renderer.color = data.color;
+        renderer.sprite = data.sprite;
 
-        Durability = blockData.durability;
+        IsDirty = false;
+        Durability = data.durability;
+        transform.localScale = Vector3.one;
     }
 
     /// <summary>
@@ -145,6 +154,8 @@ public class BlockBehaviour : LeanSelectableBehaviour
             await transform.DOMove(nextPosition, duration).AsyncWaitForCompletion();
         }
     }
+
+
 
     public bool ReduceDurability()
     {

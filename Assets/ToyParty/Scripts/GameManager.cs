@@ -67,7 +67,7 @@ namespace ToyParty
 
             // 엔드 컨디션 구현(필수) 팽이 다돌리고 나면 미션 종료
 
-            // 매칭되었을 시 / 유저 스와이프 시 트윈 효과 주어서 시각적인 피드백 제공.
+            // 매칭되었을 시 트윈 효과 주어서 시각적인 피드백 제공.
 
             // 팽이 상태별 스프라이트 변경, 특히 두번째 상태는 돌아가는 에니메이션 형태다.
 
@@ -111,12 +111,14 @@ namespace ToyParty
             while (Board.EmptyCount > 0)
             {
                 Block newBlock = spawnableBlocks.RandomSelect();
+ 
                 GameObject instantiated = PoolingManager.Instance.FetchObject(newBlock.name);
                 BlockBehaviour behaviour = instantiated.GetComponent<BlockBehaviour>();
+                behaviour.ResetBehaviour(dropPoint, newBlock.Data);
 
                 HexDirection suggestDir = (HexDirection)(dirIndex % dropDir.Count);
 
-                await Board.DropBlock(dropPoint, suggestDir, behaviour);
+                await Board.DropBlock(suggestDir, behaviour);
                 candidates.Add(behaviour.Index);
                 dirIndex++;
             }

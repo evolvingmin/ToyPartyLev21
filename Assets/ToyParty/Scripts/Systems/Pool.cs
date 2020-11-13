@@ -55,7 +55,7 @@ namespace ToyParty.Collections
             if (readyStack.Count == 0)
             {
                 int baseCount = usingCollection.Count;
-                int newCount = baseCount * Math.Max(0, poolIncreaseMultiplier - 1);
+                int newCount = Math.Max(1, baseCount) * Math.Max(0, poolIncreaseMultiplier - 1);
 
                 if (poolingFunc == null)
                 {

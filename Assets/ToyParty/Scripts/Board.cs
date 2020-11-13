@@ -9,6 +9,7 @@ using UnityEngine.Tilemaps;
 using ToyParty.System;
 using ToyParty.Utilities;
 using DG.Tweening;
+using Sirenix.OdinInspector;
 
 namespace ToyParty
 {
@@ -48,6 +49,7 @@ namespace ToyParty
         [SerializeField]
         private Tilemap playAreaMap = null;
 
+        [ShowInInspector]
         private Dictionary<Vector3Int, BlockBehaviour> blocks = new Dictionary<Vector3Int, BlockBehaviour>();
 
         public Grid Grid { get => this.grid; }
@@ -115,11 +117,9 @@ namespace ToyParty
             return sameBlocks;
         }
 
-        public async Task DropBlock(Vector3Int startIndex, HexDirection suggestDir, BlockBehaviour behaviour, float speed = 10.0f)
+        public async Task DropBlock(HexDirection suggestDir, BlockBehaviour behaviour, float speed = 10.0f)
         {
             behaviour.transform.SetParent(this.transform);
-            behaviour.transform.position = Grid.CellToWorld(startIndex);
-            behaviour.Index = startIndex;
             behaviour.gameObject.SetActive(true);
             List<Vector3Int> path = new List<Vector3Int>();
             Vector3Int destIndex = behaviour.GetDestIndex(path, suggestDir);
@@ -142,17 +142,31 @@ namespace ToyParty
         {
             HashSet<BlockBehaviour> dirtyBlocks = GetDirtyBlocks(blocksToRemove);
 
+            List<Task> removeTasks = new List<Task>();
             // 매치된 블록 제거
             foreach (BlockBehaviour blockToRemove in blocksToRemove)
             {
                 blocks[blockToRemove.Index] = null;
                 blockToRemove.State = BlockState.Matched;
-                PoolingManager.Instance.StoreObject(blockToRemove.BlockTag, blockToRemove.gameObject);
 
+                Sequence sequence = DOTween.Sequence();
+                sequence.Append(blockToRemove.transform.DOPunchScale(Vector3.one * 1.2f, 0.2f));
+                sequence.Append(blockToRemove.transform.DOScale(Vector3.zero, 0.2f));
+                sequence.AppendCallback(() => { PoolingManager.Instance.StoreObject(blockToRemove.BlockTag, blockToRemove.gameObject); });
+
+                removeTasks.Add(sequence.AsyncWaitForCompletion());
             }
 
+            await Awaiters.Until(() => removeTasks.All(x => x.IsCompleted));
+
+            //foreach (var removeTask in removeTasks)
+            //{
+            //    await Awaiters.Until(() => removeTask.IsCompleted);
+            //}
+
+
             // 정렬 시작.
-            List<Task> tasks = new List<Task>();
+            List<Task> sortTasks = new List<Task>();
 
             foreach (BlockBehaviour block in dirtyBlocks.OrderBy( x=> x.transform.position.y))
             {
@@ -168,15 +182,16 @@ namespace ToyParty
                 blocks[newIndex].State = BlockState.Placed;
                 blocks[newIndex].Index = newIndex;
 
-                Task task = block.TravelByPath(path, speed);
-                tasks.Add(task);
+                Task sortTask = block.TravelByPath(path, speed);
+                sortTasks.Add(sortTask);
             }
 
-            // 모든 개별 블록들의 TravelByPath가 끝날 때 까지 기다림.
-            foreach (var task in tasks)
-            {
-                await Awaiters.Until(() => task.IsCompleted);
-            }
+            //foreach (var sortTask in sortTasks)
+            //{
+            //    await Awaiters.Until(() => sortTask.IsCompleted);
+            //}
+
+            await Awaiters.Until(() => sortTasks.All(x => x.IsCompleted));
 
             return dirtyBlocks.Select(x => x.Index);
         }
@@ -217,7 +232,7 @@ namespace ToyParty
                     nextBlock.IsDirty = true;
                     nextIndex = validNextIndex;
 
-                    if (dirtyBlocks.Contains(nextBlock) == false)
+                    if (dirtyBlocks.Contains(nextBlock) == false && matched.Contains(nextBlock) == false)
                     {
                         dirtyBlocks.Add(nextBlock);
                         nextBlock.State = BlockState.Drop;
