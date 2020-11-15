@@ -66,6 +66,5 @@ namespace ToyParty.System
 
             pools[tag].Store(store);
         }
-        
     }
 }

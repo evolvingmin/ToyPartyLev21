@@ -43,7 +43,7 @@ namespace ToyParty
     {
         // 최초 레벨 배치만을 위해 활용.
         [SerializeField]
-        private Tilemap objectTileMap = null;
+        private Tilemap levelPlaceMap = null;
 
         // 보드가 움직일 수 있는 영역으로 활용.
         [SerializeField]
@@ -61,7 +61,7 @@ namespace ToyParty
         private void Start()
         {
             // 오브젝트 타일에서 사용하는 Sprite들을 단순히 null 세팅 한다고 사라지지 않는다. 
-            objectTileMap.RefreshAllTiles();
+            levelPlaceMap.RefreshAllTiles();
         }
 
         public bool ContainsBlock(Vector3Int index)
@@ -117,6 +117,17 @@ namespace ToyParty
             return sameBlocks;
         }
 
+        /// <summary>
+        /// 레벨에 배치된 특정 블록 개수를 가져옵니다.
+        /// </summary>
+        /// <param name="blockType"></param>
+        /// <returns></returns>
+        public int GetLevelInitialCount(string blockType)
+        {
+            var allTiles = levelPlaceMap.GetTilesBlock(playAreaMap.cellBounds);
+            return allTiles.Count(x => x != null && x.name == blockType);
+        }
+
         public async Task DropBlock(HexDirection suggestDir, BlockBehaviour behaviour, float speed = 10.0f)
         {
             behaviour.transform.SetParent(this.transform);
@@ -152,7 +163,10 @@ namespace ToyParty
                 Sequence sequence = DOTween.Sequence();
                 sequence.Append(blockToRemove.transform.DOPunchScale(Vector3.one * 1.2f, 0.2f));
                 sequence.Append(blockToRemove.transform.DOScale(Vector3.zero, 0.2f));
-                sequence.AppendCallback(() => { PoolingManager.Instance.StoreObject(blockToRemove.BlockTag, blockToRemove.gameObject); });
+                sequence.AppendCallback(() => { 
+                    PoolingManager.Instance.StoreObject(blockToRemove.BlockTag, blockToRemove.gameObject);
+                    GameManager.Instance.CheckGoalProgress(blockToRemove.BlockTag, GoalCheckType.OnCollect);
+                });
 
                 removeTasks.Add(sequence.AsyncWaitForCompletion());
             }

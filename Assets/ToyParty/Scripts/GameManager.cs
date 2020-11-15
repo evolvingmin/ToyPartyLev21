@@ -11,6 +11,49 @@ using ToyParty.Patterns;
 
 namespace ToyParty
 {
+    public enum ClearCondition
+    {
+        Collect_Top,
+        Collect_Paper,
+        Collect_MovingTube,
+        Damage_ToyBox,
+        //etc...
+    }
+
+    public enum GoalCheckType
+    {
+        None,
+        OnCollect,
+        OnDamage,
+    }
+
+    // 이 부분은 자료형으로 보관되어야 할 것.
+    public static class LevelDataEx
+    {
+        public static GoalCheckType GetGoalCheckType(this ClearCondition clearCondition)
+        {
+            switch (clearCondition)
+            {
+                case ClearCondition.Collect_Top:
+                    return GoalCheckType.OnCollect;
+                default:
+                    return GoalCheckType.None;
+            }
+        }
+
+        public static string GetTargetBlockType(this ClearCondition clearCondition)
+        {
+            switch (clearCondition)
+            {
+                case ClearCondition.Collect_Top:
+                    return "Block_Top";
+                default:
+                    return "Error:: Target BlockType is not Assigned";
+            }
+        }
+        
+    }
+
     // 게임 룰도 여기서 제어 하도록 하자.
     public class GameManager : SingletonMono<GameManager>
     {
@@ -30,6 +73,10 @@ namespace ToyParty
         [SerializeField]
         private Vector3Int dropPoint = Vector3Int.zero;
 
+        public ClearCondition ClearCondition { get; private set; } = ClearCondition.Collect_Top;
+        public bool IsLevelClear { get; private set; } = false;
+        public int GoalCount { get; private set; } = 0;
+
         private void Start()
         {
             foreach (Block block in blocks)
@@ -43,12 +90,21 @@ namespace ToyParty
                 }
             }
 
+            //레벨 관련 세팅
+            IsLevelClear = false;
+            GoalCount = Board.GetLevelInitialCount(ClearCondition.GetTargetBlockType());
+            Messenger.Instance.Send_CurrentGoalCount(GoalCount);
+            Debug.Log($"{GoalCount}");
+
             InputManager.Instance.PlayState = InputState.Idle;
         }
 
         public async Task PlayBlock(Vector3 worldPosition, Vector3 dir)
         {
             if (InputManager.Instance.PlayState == InputState.Lock)
+                return;
+
+            if (IsLevelClear)
                 return;
 
             InputManager.Instance.PlayState = InputState.Lock;
@@ -63,14 +119,6 @@ namespace ToyParty
                 return;
             }
 
-            // 해야 하는 것
-
-            // 엔드 컨디션 구현(필수) 팽이 다돌리고 나면 미션 종료
-
-            // 매칭되었을 시 트윈 효과 주어서 시각적인 피드백 제공.
-
-            // 팽이 상태별 스프라이트 변경, 특히 두번째 상태는 돌아가는 에니메이션 형태다.
-
             bool anyMatched = await PlayCoreCycle(new List<Vector3Int>() { result.Item2.Item1, result.Item2.Item2 });
 
             if(anyMatched == false)
@@ -79,7 +127,16 @@ namespace ToyParty
                 await Board.SwapBlock(result.Item2.Item1, result.Item2.Item2);
             }
 
-            InputManager.Instance.PlayState = InputState.Idle;
+            if(IsLevelClear)
+            {
+                Messenger.Instance.Send_LevelComplete();
+            }
+            else
+            {
+                InputManager.Instance.PlayState = InputState.Idle;
+            }
+
+
             Debug.Log($"InputState: {InputManager.Instance.PlayState}");
         }
 
@@ -125,6 +182,25 @@ namespace ToyParty
 
             // 매칭 검사를 진행할 블록들은 정렬로 인해 위치가 옮겨진 블록들과, 새로 추가된 블록들을 대상으로 합니다.
             return await PlayCoreCycle(candidates, cycleCount + 1);
+        }
+
+        public void CheckGoalProgress(string blockTag, GoalCheckType goalCheckType)
+        {
+            if (goalCheckType != ClearCondition.GetGoalCheckType())
+                return;
+
+            if (blockTag != ClearCondition.GetTargetBlockType())
+                return;
+
+            GoalCount--;
+            Messenger.Instance.Send_CurrentGoalCount(GoalCount);
+
+            if (GoalCount <= 0)
+            {
+                IsLevelClear = true;
+            }
+                
+
         }
 
         private IEnumerable<BlockBehaviour> GetBrokenObstacles(IEnumerable<Vector3Int> matched)

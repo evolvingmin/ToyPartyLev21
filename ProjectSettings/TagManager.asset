@@ -13,7 +13,7 @@ TagManager:
   - UI
   - 
   - 
-  - 
+  - UI_Popup
   - 
   - 
   - 
@@ -46,4 +46,7 @@ TagManager:
     locked: 0
   - name: Tile_Background
     uniqueID: 3555922359
+    locked: 0
+  - name: UI_Popup
+    uniqueID: 3307642241
     locked: 0
